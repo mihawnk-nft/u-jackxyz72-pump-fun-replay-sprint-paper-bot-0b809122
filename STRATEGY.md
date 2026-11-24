@@ -71,17 +71,20 @@ own fills/coins fall behind a prorated pace (30 coins / 300 fills over 24h
 of block time), it opens tiny 0.01 SOL probe round trips on the most liquid
 coin that traded this batch and sells as soon as the buy lands.
 
-## Results (dev window, local engine port over all three dataset parts)
+## Results (dev window, `grade-local --driver process`, authoritative)
 
-Final settings, mean over 4 failed-tx keys:
+Final settings:
 
-- net PnL ≈ −0.18 SOL, 173 round trips over 167 coins, 39 wins (23%),
-  max drawdown ≈ 2%.
+- net PnL −0.145 SOL (90% interval −0.30 .. +0.01 SOL), 173 round trips
+  over 168 coins, 356 fills, 71 wins (23%), max drawdown 1.4%.
+- Guardrails met: 168 coins hold a round trip ≥ 0.01 SOL (bar: 20),
+  drawdown far under the 50% cap. Two executions reproduced byte for byte.
+- Stress (20 rebuilt copies of the dev window): median −0.26, p10 −0.41,
+  p90 −0.12 SOL; all 20 copies lost money, dev score above 17 of 20.
 - The dev window is hard: every house pilot loses on it too (sniper −0.49,
-  reversion −4.02, momentum far worse). The edge is the runner capture, not
-  the win rate, so the final-window result depends on how many runners that
-  window holds — see `grade-local --stress` for the spread across rebuilt
-  copies of this window.
+  reversion −4.02, momentum far worse on the same local engine). The edge
+  is the runner capture, not the win rate, so the final-window result
+  depends on how many runners that window holds.
 
 ## What was tried and dropped
 
