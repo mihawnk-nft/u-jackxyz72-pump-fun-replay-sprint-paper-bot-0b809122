@@ -10,9 +10,14 @@
 //     that later peak 2-5x already show a median 19 distinct buyers and +8.5 SOL
 //     net inflow in their first 30 slots, while coins that never peak above 1.25x
 //     (51% of all coins) show a median 1 buyer and +0.05 SOL. Entry therefore
-//     needs at least 5 distinct buyers and 5 trades, but must fire early (age
-//     <= 60 slots) — waiting for 8 buyers and +1 SOL of inflow lets the fastest
-//     runners run past the entry window first.
+//     needs at least 6 distinct buyers, 6 trades and +2 SOL of net inflow since
+//     create, must fire within 30 slots of create, and only while the price is
+//     still inside 0.9x-1.5x of its create price: buying a coin that already ran
+//     2x+ in its first minute means buying the top. Sweeps on the full dev window
+//     confirmed each tightening step (later entry, looser run-up, fewer buyers)
+//     costs net PnL; the chosen point sits on the flat part of that curve with
+//     ~170 round trips, rather than at the extreme end where the trip count
+//     collapses and the result becomes one lottery ticket.
 //   - Adds only pyramid into strength: the price must be 10% above the last buy
 //     and the position already up 5%, so adds never chase a top. (Loose adds were
 //     the biggest leak in testing: they turned 35 winning trips into 13.)
@@ -111,16 +116,16 @@ export interface Params {
 
 export const DEFAULT_PARAMS: Params = {
   minAge: 0,
-  maxAge: 60,
+  maxAge: 30,
   minRealSol: 200_000_000n,
   maxRealSol: 60_000_000_000n,
-  minBuyers: 5,
-  minTrades: 5,
+  minBuyers: 6,
+  minTrades: 6,
   minNetSol: 2_000_000_000n,
   maxDevBuy: 2_500_000_000n,
   skipDevSold: true,
   minRunupBps: 9_000,
-  maxRunupBps: 25_000,
+  maxRunupBps: 15_000,
   flowWindow: 30,
   addNetSol: 500_000_000n,
   stakeLamports: 200_000_000n,
@@ -377,7 +382,7 @@ export function createStrategy(p: Params = DEFAULT_PARAMS) {
           if (slot - c.lastTradeSlot >= p.staleSlots) exit = true;
           if (p.exitOnDevSell && c.devSold) exit = true;
           if (bigSellMint === mint) exit = true;
-          if (p.fadeExitSol > 0n && flow(c, slot, p.fadeWindow) < -p.fadeExitSol) exit = true;
+          if (p.fadeExitSol > 0n && flow(c, slot, p.fadeWindow) < -p.fadeExitSol && value * BPS < basis * (BPS + BigInt(p.trailArmBps))) exit = true;
         }
         if (!exit) continue;
         if (hasPending(state, mint, 'sell')) continue;
